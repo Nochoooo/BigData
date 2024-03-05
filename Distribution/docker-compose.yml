@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build: ./files
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      FLASK_ENV: development
+      FLASK_APP: /app/app.py
+      FLASK_RUN_HOST: 127.0.0.1:5000
+    volumes:
+      - ./files:/app
+
+  postgres:
+    image: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>Parser</title>
+</head>
+<body>
+<form id="parseForm">
+    <label for="interval">Указать временной интервал (сек.): </label>
+    <input type="text" id="start_interval" placeholder="От">
+    <input type="text" id="end_interval" placeholder="До">
+    <button onclick="parse(event)">Парсить</button>
+</form>
+<p>Количество данных: <span id="data_count">{{ data_count }}</span></p>
+
+<p>Выберите график для построения:</p>
+
+<select id="graphSelect">
+    <option value="chart_1">Распределения опыта</option>
+    <option value="chart_2">Медианные предлагаемые зарплаты в ИТ-сфере в зависимости от графика работы</option>
+    <option value="chart_3">Медианные предлагаемые зарплаты по городам</option>
+    <option value="chart_4">Медианные предлагаемые зарплаты в ИТ-сфере в зависимости от опыта</option>
+    <option value="chart_5">Медианные предлагаемые зарплаты в ИТ-сфере в зависимости от типа занятости</option>
+    <option value="chart_6">Распределение требуемого опыта в зависимости от графика работы</option>
+</select>
+<button onclick="buildGraph()">Построить</button>
+<div id="graph"></div>
+
+<script>
+    function parse(event) {
+        event.preventDefault();
+        var startInterval = document.getElementById('start_interval').value;
+        var endInterval = document.getElementById('end_interval').value;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/parse', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var response = xhr.responseText;
+                alert(response);
+                updateDataCount();
+                checkChartData();
+            }
+        };
+        xhr.send('start_interval=' + startInterval + '&end_interval=' + endInterval);
+    }
+
+    function buildGraph() {
+        var selectedGraph = document.getElementById("graphSelect").value;
+        fetch('/plot', {
+            method: 'POST',
+            body: JSON.stringify({graph: selectedGraph}),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                var graphDiv = document.getElementById('graph');
+                var img = new Image();
+                img.src = data;
+                graphDiv.innerHTML = '';
+                graphDiv.appendChild(img);
+            });
+    }
+
+    function updateDataCount() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/get_data_count', true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var dataCount = xhr.responseText;
+                document.getElementById('data_count').innerText = dataCount;
+                checkChartData();
+            }
+        };
+        xhr.send();
+    }
+
+    function checkChartData() {
+        var dataCount = document.getElementById('data_count').innerText;
+        var buildButton = document.getElementById('build_button');
+
+        if (dataCount !== '' && parseInt(dataCount) > 0) {
+            buildButton.disabled = false;
+        } else {
+            buildButton.disabled = true;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        checkChartData();
+    });
+
+</script>
+</body>
+</html>
